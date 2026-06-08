@@ -1,0 +1,28 @@
+<button class="luv-button" type="button" data-luv-button>
+	Give luv ♥ <span data-luv-remaining>(5 left)</span>
+</button>
+<small data-luv-message>luv is rare</small>
+
+<script>
+	const button = document.querySelector<HTMLButtonElement>('[data-luv-button]');
+	const remainingLabel = document.querySelector<HTMLElement>('[data-luv-remaining]');
+	const message = document.querySelector<HTMLElement>('[data-luv-message]');
+	const total = document.querySelector<HTMLElement>('#luv-total');
+	let remaining = 5;
+	let count = Number(total?.textContent ?? '27');
+
+	button?.addEventListener('click', () => {
+		if (remaining <= 0) {
+			if (message) message.textContent = 'no luv left today';
+			return;
+		}
+
+		remaining -= 1;
+		count += 1;
+
+		if (total) total.textContent = String(count);
+		if (remainingLabel) remainingLabel.textContent = `(${remaining} left)`;
+		if (message) message.textContent = remaining === 0 ? 'no luv left today' : 'luv sent!';
+		if (remaining === 0 && button) button.disabled = true;
+	});
+</script>

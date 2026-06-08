@@ -1,0 +1,36 @@
+---
+import { skillCategories } from '../data/skills';
+---
+
+<section class="retro-box panel" aria-labelledby="skills-heading">
+	<div class="module-title" id="skills-heading">Skills Quiz</div>
+	<div class="skill-groups">
+		{
+			skillCategories.map((category) => (
+				<section class="skill-group" aria-labelledby={`skill-${category.category}`}>
+					<h3 id={`skill-${category.category}`} class="heading-font">
+						{category.category}
+					</h3>
+					{category.skills.map((skill) => (
+						<div class="skill-row">
+							<div class="skill-label">
+								<span>{skill.name}</span>
+								<span>{skill.proficiency}%</span>
+							</div>
+							<div
+								class:list={['skill-meter', { expert: skill.proficiency >= 80 }]}
+								role="progressbar"
+								aria-label={`${skill.name} proficiency`}
+								aria-valuemin="0"
+								aria-valuemax="100"
+								aria-valuenow={skill.proficiency}
+							>
+								<span style={`width: ${skill.proficiency}%`}></span>
+							</div>
+						</div>
+					))}
+				</section>
+			))
+		}
+	</div>
+</section>

@@ -1,0 +1,12 @@
+---
+import { owner } from '../data/owner';
+---
+
+<section class="retro-box panel" aria-labelledby="about-heading">
+	<div class="module-title" id="about-heading">About Me</div>
+	{owner.bio.map((paragraph) => <p>{paragraph}</p>)}
+	<div class="quote-strip">"it was destiny for us. we were meant to be together." - my code and tests</div>
+	<ul class="fun-facts">
+		{owner.funFacts.map((fact) => <li>{fact}</li>)}
+	</ul>
+</section>

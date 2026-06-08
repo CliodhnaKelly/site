@@ -1,0 +1,76 @@
+<section class="retro-box panel whiteboard-panel" aria-labelledby="whiteboard-heading">
+	<div class="module-title" id="whiteboard-heading">Whiteboard</div>
+	<canvas
+		class="whiteboard-canvas"
+		width="620"
+		height="260"
+		aria-label="Drawable whiteboard canvas"
+		data-whiteboard
+	></canvas>
+	<div class="whiteboard-tools">
+		<label>
+			Colour
+			<input type="color" value="#ff4fb8" data-whiteboard-colour />
+		</label>
+		<label>
+			Size
+			<input type="range" min="2" max="18" value="5" data-whiteboard-size />
+		</label>
+		<button type="button" data-whiteboard-clear>Clear</button>
+	</div>
+</section>
+
+<script>
+	const canvas = document.querySelector<HTMLCanvasElement>('[data-whiteboard]');
+	const colourInput = document.querySelector<HTMLInputElement>('[data-whiteboard-colour]');
+	const sizeInput = document.querySelector<HTMLInputElement>('[data-whiteboard-size]');
+	const clearButton = document.querySelector<HTMLButtonElement>('[data-whiteboard-clear]');
+	const context = canvas?.getContext('2d');
+	let drawing = false;
+
+	function position(event: PointerEvent) {
+		if (!canvas) return { x: 0, y: 0 };
+		const rect = canvas.getBoundingClientRect();
+		return {
+			x: ((event.clientX - rect.left) / rect.width) * canvas.width,
+			y: ((event.clientY - rect.top) / rect.height) * canvas.height,
+		};
+	}
+
+	if (canvas && context) {
+		context.lineCap = 'round';
+		context.lineJoin = 'round';
+		context.fillStyle = '#fff';
+		context.fillRect(0, 0, canvas.width, canvas.height);
+
+		canvas.addEventListener('pointerdown', (event) => {
+			drawing = true;
+			canvas.setPointerCapture(event.pointerId);
+			const point = position(event);
+			context.beginPath();
+			context.moveTo(point.x, point.y);
+		});
+
+		canvas.addEventListener('pointermove', (event) => {
+			if (!drawing) return;
+			const point = position(event);
+			context.strokeStyle = colourInput?.value ?? '#ff4fb8';
+			context.lineWidth = Number(sizeInput?.value ?? 5);
+			context.lineTo(point.x, point.y);
+			context.stroke();
+		});
+
+		canvas.addEventListener('pointerup', () => {
+			drawing = false;
+		});
+
+		canvas.addEventListener('pointerleave', () => {
+			drawing = false;
+		});
+
+		clearButton?.addEventListener('click', () => {
+			context.fillStyle = '#fff';
+			context.fillRect(0, 0, canvas.width, canvas.height);
+		});
+	}
+</script>

@@ -1,0 +1,26 @@
+---
+import AboutMe from '../components/AboutMe.astro';
+import BookmarksWall from '../components/BookmarksWall.astro';
+import Layout from '../layouts/Layout.astro';
+import ProfileSidebar from '../components/ProfileSidebar.astro';
+import SkillsPanel from '../components/SkillsPanel.astro';
+import TopFriendsPanel from '../components/TopFriendsPanel.astro';
+import Whiteboard from '../components/Whiteboard.astro';
+---
+
+<Layout title="Cliodhna | Profile">
+	<div class="profile-layout">
+		<ProfileSidebar />
+		<main class="profile-main">
+			<AboutMe />
+			<hr class="pixel-divider" />
+			<SkillsPanel />
+			<hr class="pixel-divider" />
+			<TopFriendsPanel />
+			<hr class="pixel-divider" />
+			<Whiteboard />
+			<hr class="pixel-divider" />
+			<BookmarksWall />
+		</main>
+	</div>
+</Layout>

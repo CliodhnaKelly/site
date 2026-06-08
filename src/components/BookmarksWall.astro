@@ -1,0 +1,22 @@
+---
+import { bookmarks } from '../data/bookmarks';
+---
+
+<section class="retro-box panel" aria-labelledby="bookmarks-heading">
+	<div class="module-title" id="bookmarks-heading">Comments / Cool Links</div>
+	<div class="bookmarks-wall">
+		{
+			bookmarks.map((bookmark) => (
+				<article class="retro-box bookmark-entry" data-bookmark-entry>
+					<a href={bookmark.url} target="_blank" rel="noopener noreferrer">
+						{bookmark.title}
+					</a>
+					{bookmark.source && <p class="bookmark-meta">
+						{bookmark.source} · {bookmark.dateString}
+					</p>}
+					{bookmark.note ? <p class="bookmark-note">{bookmark.note}</p> : null}
+				</article>
+			))
+		}
+	</div>
+</section>

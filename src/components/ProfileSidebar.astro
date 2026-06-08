@@ -1,0 +1,39 @@
+---
+import { owner } from '../data/owner';
+import LuvButton from './LuvButton.astro';
+---
+
+<aside class="retro-box profile-sidebar">
+	<div class="module-title">clio's profile</div>
+	<img class="profile-avatar" src={owner.avatarSrc} alt={owner.avatarAlt} />
+	<h1 class="heading-font sparkle-text profile-name">
+		<span>{owner.displayName}</span>
+		<span aria-hidden="true">✦</span>
+	</h1>
+	<p class="profile-tagline">{owner.tagline}</p>
+	<p class="profile-mood">Mood: {owner.mood}</p>
+	<div class="luv-box" aria-label="Luv count">
+		<span aria-hidden="true">♥♥♥</span>
+		<strong><span id="luv-total">27</span> luv</strong>
+		<LuvButton />
+	</div>
+	<nav class="social-links" aria-label="Social links">
+		{
+			owner.socialLinks.map((link) => (
+				<a
+					href={link.href}
+					target={link.href.startsWith('mailto:') ? undefined : '_blank'}
+					rel={link.href.startsWith('mailto:') ? undefined : 'noopener noreferrer'}
+				>
+					<span aria-hidden="true">{link.icon}</span>
+					<span>{link.label}</span>
+				</a>
+			))
+		}
+	</nav>
+	<div class="sidebar-list">
+		<div><strong>Other Half:</strong> excellent error messages</div>
+		<div><strong>Flashbox:</strong> one perfect demo</div>
+		<div><strong>Whiteboard:</strong> open for doodles</div>
+	</div>
+</aside>

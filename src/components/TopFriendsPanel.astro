@@ -1,0 +1,42 @@
+---
+import { projects } from '../data/projects';
+
+const sortedProjects = [...projects].sort((a, b) => a.order - b.order);
+const placeholders = Array.from({ length: 16 }, (_, index) => index + 1);
+---
+
+<section class="retro-box panel" aria-labelledby="projects-heading">
+	<div class="module-title" id="projects-heading">Top 16 Projects</div>
+	<div class="project-grid">
+		{
+			sortedProjects.length === 0
+				? placeholders.map((slot) => (
+						<article class="project-card placeholder-card">
+							<span class="top-slot">#{slot}</span>
+							<p>Projects coming soon! 🚧</p>
+						</article>
+					))
+				: sortedProjects.map((project) => (
+						<article class="project-card">
+							<h3 class="heading-font">{project.title}</h3>
+							<p>{project.description}</p>
+							<div class="tag-list">
+								{project.techStack.map((tech) => (
+									<span>{tech}</span>
+								))}
+							</div>
+							<div class="project-links">
+								<a href={project.repoUrl} target="_blank" rel="noopener noreferrer">
+									Source
+								</a>
+								{project.demoUrl ? (
+									<a href={project.demoUrl} target="_blank" rel="noopener noreferrer">
+										Live Demo
+									</a>
+								) : null}
+							</div>
+						</article>
+					))
+		}
+	</div>
+</section>
