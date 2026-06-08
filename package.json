@@ -9,9 +9,18 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "test": "vitest --run"
   },
   "dependencies": {
     "astro": "^6.4.4"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.9",
+    "@testing-library/jest-dom": "^6.9.1",
+    "fast-check": "^3.23.2",
+    "jsdom": "^25.0.1",
+    "typescript": "^6.0.3",
+    "vitest": "^3.2.6"
   }
 }
