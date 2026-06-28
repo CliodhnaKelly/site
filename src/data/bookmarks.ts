@@ -19,4 +19,9 @@ export const bookmarks: Bookmark[] = [
 		title: 'SWE Roadmap',
 		url: 'https://roadmap.sh/'
 	},
+	{
+		id: 'ai-predictions',
+		title: 'AI Predictions',
+		url: 'https://ai-2027.com/'
+	},
 ];
