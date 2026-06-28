@@ -1,0 +1,57 @@
+---
+const themes = [
+	{ id: 'pink',   label: 'Bebo Pink',       color: '#e1198d' },
+	{ id: 'purple', label: 'Purple Princess',  color: '#9c27b0' },
+	{ id: 'blue',   label: 'MSN Blue',         color: '#0870bd' },
+	{ id: 'lime',   label: 'Neon Lime',        color: '#66bb00' },
+] as const;
+---
+
+<div class="theme-bar" role="group" aria-label="Choose a skin">
+	<span class="theme-bar-label" aria-hidden="true">✨ Skin:</span>
+	{themes.map(t => (
+		<button
+			class="theme-btn"
+			data-tid={t.id}
+			title={t.label}
+			aria-label={`${t.label} skin`}
+			aria-pressed="false"
+			style={`--swatch: ${t.color}`}
+		>
+			<span class="theme-swatch" aria-hidden="true"></span>
+			<span>{t.label}</span>
+		</button>
+	))}
+</div>
+
+<script>
+	const root = document.documentElement;
+
+	function getActive(): string {
+		return root.dataset.theme || 'pink';
+	}
+
+	function setTheme(id: string) {
+		if (id === 'pink') {
+			delete root.dataset.theme;
+		} else {
+			root.dataset.theme = id;
+		}
+		try { localStorage.setItem('site-theme', id); } catch (_) {}
+		markActive(id);
+	}
+
+	function markActive(id: string) {
+		document.querySelectorAll<HTMLButtonElement>('.theme-btn').forEach(btn => {
+			const isActive = btn.dataset.tid === id;
+			btn.classList.toggle('active', isActive);
+			btn.setAttribute('aria-pressed', String(isActive));
+		});
+	}
+
+	markActive(getActive());
+
+	document.querySelectorAll<HTMLButtonElement>('.theme-btn').forEach(btn => {
+		btn.addEventListener('click', () => setTheme(btn.dataset.tid!));
+	});
+</script>
