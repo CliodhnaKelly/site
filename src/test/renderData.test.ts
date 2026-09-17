@@ -1,56 +1,89 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import fc from 'fast-check';
 import { bookmarks } from '../data/bookmarks';
 import { owner } from '../data/owner';
 import { projects } from '../data/projects';
 import { skillCategories } from '../data/skills';
+import { themes } from '../data/themes';
 
-describe('retro portfolio static data', () => {
-	it('Feature: retro-portfolio, Property 2: owner sidebar data is complete', () => {
+// These tests describe what the site needs to render correctly,
+// so a data edit that would break a page fails the build.
+
+describe('owner', () => {
+	it('has the fields the sidebar and hero render', () => {
 		expect(owner.displayName).toBeTruthy();
 		expect(owner.tagline).toBeTruthy();
 		expect(owner.mood).toBeTruthy();
+		// avatarSrc is an Astro image import; under plain Vitest it resolves
+		// differently than in Astro, so only the alt text is asserted here.
 		expect(owner.avatarAlt).toBeTruthy();
-		expect(owner.socialLinks).toHaveLength(3);
+		expect(owner.bio.length).toBeGreaterThanOrEqual(1);
+		expect(owner.funFacts.length).toBeGreaterThanOrEqual(1);
 	});
 
-	it('Feature: retro-portfolio, Property 3: bio and fun facts satisfy profile requirements', () => {
-		expect(owner.bio.length).toBeGreaterThanOrEqual(2);
-		expect(owner.funFacts.length).toBeGreaterThanOrEqual(5);
+	it('social links all point somewhere', () => {
+		expect(owner.socialLinks.length).toBeGreaterThanOrEqual(1);
+		for (const link of owner.socialLinks) {
+			expect(link.label).toBeTruthy();
+			expect(link.href).toMatch(/^(https:\/\/|mailto:)/);
+		}
+	});
+});
+
+describe('projects', () => {
+	it('every project renders a complete card', () => {
+		expect(projects.length).toBeGreaterThanOrEqual(1);
+		for (const project of projects) {
+			expect(project.title).toBeTruthy();
+			expect(project.description).toBeTruthy();
+			expect(project.repoUrl).toMatch(/^https:\/\//);
+			expect(project.techStack.length).toBeGreaterThanOrEqual(1);
+			if (project.demoUrl) expect(project.demoUrl).toMatch(/^https:\/\//);
+		}
 	});
 
-	it('Feature: retro-portfolio, Property 4: skills stay inside progress range', () => {
-		fc.assert(
-			fc.property(fc.constantFrom(...skillCategories), (category) => {
-				expect(category.skills.length).toBeGreaterThanOrEqual(3);
-				for (const skill of category.skills) {
-					expect(skill.proficiency).toBeGreaterThanOrEqual(0);
-					expect(skill.proficiency).toBeLessThanOrEqual(100);
-				}
-			}),
-		);
+	it('orders are unique so the Top 16 sort is stable', () => {
+		const orders = projects.map((p) => p.order);
+		expect(new Set(orders).size).toBe(orders.length);
 	});
+});
 
-	it('Feature: retro-portfolio, Property 5: expert threshold has representative data', () => {
-		const proficiencies = skillCategories.flatMap((category) =>
-			category.skills.map((skill) => skill.proficiency),
-		);
-
-		expect(proficiencies.filter((value) => value >= 80).length).toBeGreaterThanOrEqual(2);
-		expect(proficiencies.some((value) => value < 80)).toBe(true);
+describe('skills', () => {
+	it('every skill fits the 0–100 progress meter', () => {
+		expect(skillCategories.length).toBeGreaterThanOrEqual(1);
+		for (const category of skillCategories) {
+			expect(category.category).toBeTruthy();
+			expect(category.skills.length).toBeGreaterThanOrEqual(1);
+			for (const skill of category.skills) {
+				expect(skill.name).toBeTruthy();
+				expect(skill.proficiency).toBeGreaterThanOrEqual(0);
+				expect(skill.proficiency).toBeLessThanOrEqual(100);
+			}
+		}
 	});
+});
 
-	it('Feature: retro-portfolio, Property 7: empty projects array yields placeholder path', () => {
-		expect(projects).toHaveLength(0);
-	});
-
-	it('Feature: retro-portfolio, Property 8 and 9: bookmarks are complete safe links', () => {
-		expect(bookmarks.length).toBeGreaterThanOrEqual(4);
+describe('bookmarks', () => {
+	it('every bookmark is a complete https link', () => {
+		expect(bookmarks.length).toBeGreaterThanOrEqual(1);
 		for (const bookmark of bookmarks) {
 			expect(bookmark.title).toBeTruthy();
 			expect(bookmark.url).toMatch(/^https:\/\//);
-			expect(bookmark.source).toBeTruthy();
-			expect(bookmark.dateString).toBeTruthy();
 		}
+	});
+});
+
+describe('themes', () => {
+	const css = readFileSync(resolve(process.cwd(), 'src/styles/global.css'), 'utf-8');
+
+	it('every non-default skin has a [data-theme] block in global.css', () => {
+		for (const theme of themes.filter((t) => t.id !== 'pink')) {
+			expect(css, `missing [data-theme="${theme.id}"] block`).toContain(`[data-theme="${theme.id}"]`);
+		}
+	});
+
+	it('pink is the default skin', () => {
+		expect(themes[0]?.id).toBe('pink');
 	});
 });

@@ -32,7 +32,6 @@ export const owner: OwnerData = {
 		'🎧 Codes best with one album on repeat',
 	],
 	socialLinks: [
-		{ label: 'GitHub', href: '', icon: '💻' },
-		{ label: 'LinkedIn', href: '', icon: '💼' },
+		{ label: 'GitHub', href: 'https://github.com/CliodhnaKelly', icon: '💻' },
 	],
 };

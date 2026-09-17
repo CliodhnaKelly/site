@@ -1,12 +1,13 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import RetroHero from '../components/RetroHero.astro';
+import TopFriendsPanel from '../components/TopFriendsPanel.astro';
 ---
 
-
+<Layout title="Cliodhna | Home">
 	<main>
+		<RetroHero />
 		<hr class="pixel-divider" />
-		<section class="retro-box" aria-labelledby="projects-placeholder">
-			<h2 id="projects-placeholder" class="heading-font">Projects coming soon</h2>
-		</section>
+		<TopFriendsPanel />
 	</main>
+</Layout>
