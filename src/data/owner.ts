@@ -19,12 +19,12 @@ export interface OwnerData {
 }
 
 export const owner: OwnerData = {
-	displayName: 'Cliodhna',
+	displayName: 'Clíodhna',
 	role: 'SWE',
 	tagline: 'Basshunter 4 lyf',
 	mood: 'Caffeinated',
 	avatarSrc: avatar.src,
-	avatarAlt: 'Retro illustrated avatar for Cliodhna',
+	avatarAlt: 'Retro illustrated avatar for Clíodhna',
 	bio: [
 		'Enjoys all things 2000s',
 	],
