@@ -570,16 +570,6 @@ a:focus-visible {
 	line-height: 1.45;
 }
 
-.quote-strip {
-	margin: 8px 0;
-	padding: 6px;
-	background: #fff8cc;
-	border: 1px solid #dec65a;
-	color: #4b3b00;
-	font-size: 12px;
-	font-weight: 700;
-}
-
 .fun-facts {
 	display: grid;
 	gap: 5px;
@@ -607,34 +597,14 @@ a:focus-visible {
 	font-size: 13px;
 }
 
-.skill-row {
-	margin: 0 0 8px;
-}
-
-.skill-label {
-	display: flex;
-	justify-content: space-between;
-	gap: 10px;
-	margin-bottom: 3px;
+.skill-list {
+	margin: 0;
+	padding-left: 18px;
 	font-weight: 700;
 }
 
-.skill-meter {
-	height: 12px;
-	padding: 1px;
-	background: #fff;
-	border: 1px solid var(--c-border);
-	overflow: hidden;
-}
-
-.skill-meter span {
-	display: block;
-	height: 100%;
-	background: var(--c-fill);
-}
-
-.skill-meter.expert span {
-	background: var(--c-star);
+.skill-list li {
+	margin-bottom: 4px;
 }
 
 /* ── Projects ────────────────────────────────────────────────── */

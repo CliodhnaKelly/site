@@ -49,15 +49,13 @@ describe('projects', () => {
 });
 
 describe('skills', () => {
-	it('every skill fits the 0–100 progress meter', () => {
+	it('every category lists named skills', () => {
 		expect(skillCategories.length).toBeGreaterThanOrEqual(1);
 		for (const category of skillCategories) {
 			expect(category.category).toBeTruthy();
 			expect(category.skills.length).toBeGreaterThanOrEqual(1);
 			for (const skill of category.skills) {
-				expect(skill.name).toBeTruthy();
-				expect(skill.proficiency).toBeGreaterThanOrEqual(0);
-				expect(skill.proficiency).toBeLessThanOrEqual(100);
+				expect(skill).toBeTruthy();
 			}
 		}
 	});
