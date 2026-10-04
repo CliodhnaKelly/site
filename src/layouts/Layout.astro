@@ -3,6 +3,7 @@ import '../styles/global.css';
 import SparkleLayer from '../components/SparkleLayer.astro';
 import VisitorCounter from '../components/VisitorCounter.astro';
 import ThemeSwitcher from '../components/ThemeSwitcher.astro';
+import PixelPet from '../components/PixelPet.astro';
 
 interface Props {
 	title?: string;
@@ -46,6 +47,7 @@ const { title = 'Cliodhna | Retro Portfolio' } = Astro.props;
 						<a href="/profile">Profile</a>
 						<a href="/photos">Photos</a>
 						<a href="/blog">Blog</a>
+						<a href="/guestbook">Guestbook</a>
 					</nav>
 					<VisitorCounter />
 				</div>
@@ -55,6 +57,7 @@ const { title = 'Cliodhna | Retro Portfolio' } = Astro.props;
 				<slot />
 			</div>
 			<footer class="site-footer">
+				<PixelPet />
 				<p class="heading-font">Best viewed with glitter mode enabled</p>
 			</footer>
 		</div>
