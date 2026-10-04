@@ -730,32 +730,6 @@ a:focus-visible {
 	cursor: pointer;
 }
 
-/* ── Photos ──────────────────────────────────────────────────── */
-.photo-grid {
-	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-	gap: 8px;
-}
-
-.photo-grid article {
-	display: grid;
-	place-items: center;
-	min-height: 120px;
-	padding: 10px;
-	background: var(--c-panel);
-	border: 1px solid var(--c-panel-bd);
-	text-align: center;
-}
-
-.photo-grid span {
-	font-size: 2rem;
-}
-
-.photo-grid small {
-	color: var(--c-text-muted);
-	font-weight: 700;
-}
-
 /* ── Responsive ──────────────────────────────────────────────── */
 @media (min-width: 560px) {
 	.bebo-topbar {
