@@ -1,0 +1,157 @@
+---
+// A pixel dragon that lives in the corner of every page. Gets happier the
+// more of the site you explore (and when petted); gets sleepy if you stay
+// away. Breathes fire at max happiness. State is per-visitor in
+// localStorage; the brain lives in src/lib/pet.ts.
+//
+// Sprite legend: X outline · g scales · p belly · E eye · n nostril · W wing
+
+const SPRITE = [
+	'..X..........X..',
+	'.XgX........XgX.',
+	'.XggX......XggX.',
+	'..XggXXXXXXggX..',
+	'..XggggggggggX..',
+	'..XgEggggggEgX..',
+	'.XXggggggggggXX.',
+	'XWXgggnngggggXWX',
+	'XWXggggggggggXWX',
+	'.XXgppppppppgXX.',
+	'..XgppppppppgX..',
+	'...XggggggggX...',
+	'...XgX....XgX...',
+	'...XXX....XXX...',
+];
+
+const FILL: Record<string, string> = {
+	X: '#456b45',
+	g: '#b7e6b0',
+	p: '#f6e7b2',
+	E: 'var(--c-text)',
+	n: '#5c8a5c',
+	W: 'var(--c-accent-lt)',
+};
+
+const cells: { x: number; y: number; fill: string; cls: string | undefined }[] = [];
+SPRITE.forEach((row, y) => {
+	[...row].forEach((ch, x) => {
+		if (ch === '.') return;
+		const cls = ch === 'E' ? 'eye' : ch === 'W' ? 'wing' : undefined;
+		cells.push({ x, y, fill: FILL[ch], cls });
+	});
+});
+const W = SPRITE[0].length;
+const H = SPRITE.length;
+---
+
+<button class="pixel-pet" data-pet aria-label="Disturb the pixel dragon" title="disturb the dragon">
+	<svg viewBox={`0 0 ${W} ${H}`} width="60" height="52" shape-rendering="crispEdges" aria-hidden="true">
+		{cells.map((c) => (
+			<rect x={c.x} y={c.y} width="1" height="1" fill={c.fill} class={c.cls} />
+		))}
+		<g class="closed-eyes" fill="var(--c-text)">
+			<rect x="3.6" y="5.4" width="1.8" height="0.35" />
+			<rect x="10.6" y="5.4" width="1.8" height="0.35" />
+		</g>
+		<g class="pet-flame">
+			<rect x="7" y="0" width="1" height="1" fill="#ff9b3d" />
+			<rect x="8" y="0" width="1" height="1" fill="#ffd23d" />
+			<rect x="7.5" y="-0.8" width="1" height="1" fill="#ff5e3d" />
+		</g>
+		<g class="pet-sparkles" fill="var(--c-star)">
+			<rect x="0" y="3" width="1" height="1" />
+			<rect x="15" y="1" width="1" height="1" />
+		</g>
+	</svg>
+	<span class="pet-bubble" data-pet-bubble></span>
+</button>
+
+<style>
+	.pixel-pet {
+		position: fixed;
+		right: 14px;
+		bottom: 10px;
+		z-index: 40;
+		background: none;
+		border: 0;
+		padding: 0;
+		cursor: pointer;
+		image-rendering: pixelated;
+	}
+	.pixel-pet svg { display: block; overflow: visible; }
+	.closed-eyes, .pet-sparkles, .pet-flame { display: none; }
+
+	.pixel-pet.mood-sleepy .eye { display: none; }
+	.pixel-pet.mood-sleepy .closed-eyes { display: block; }
+	.pixel-pet.mood-sleepy { animation: pet-doze 4s ease-in-out infinite; }
+	.pixel-pet.mood-content { animation: pet-bob 2.6s ease-in-out infinite; }
+	.pixel-pet.mood-happy { animation: pet-bob 1.4s ease-in-out infinite; }
+	.pixel-pet.mood-happy .wing { animation: pet-flap 0.7s steps(2) infinite; }
+	.pixel-pet.mood-sparkly { animation: pet-bob 0.9s ease-in-out infinite; }
+	.pixel-pet.mood-sparkly .wing { animation: pet-flap 0.45s steps(2) infinite; }
+	.pixel-pet.mood-sparkly .pet-sparkles { display: block; animation: pet-twinkle 0.9s steps(2) infinite; }
+	.pixel-pet.mood-sparkly .pet-flame { display: block; animation: pet-twinkle 0.35s steps(2) infinite; }
+
+	.pet-bubble {
+		position: absolute;
+		right: 100%;
+		bottom: 60%;
+		margin-right: 6px;
+		white-space: nowrap;
+		font-size: 11px;
+		background: var(--c-panel);
+		border: 1px solid var(--c-panel-bd);
+		border-radius: 8px 8px 2px 8px;
+		padding: 2px 8px;
+		color: var(--c-text);
+		opacity: 0;
+		transition: opacity 0.2s;
+		pointer-events: none;
+	}
+	.pixel-pet:hover .pet-bubble, .pet-bubble.show { opacity: 1; }
+
+	@keyframes pet-bob { 50% { transform: translateY(-3px); } }
+	@keyframes pet-doze { 50% { transform: translateY(1px) scaleY(0.97); } }
+	@keyframes pet-twinkle { 50% { opacity: 0.2; } }
+	@keyframes pet-flap { 50% { opacity: 0.45; } }
+
+	@media (prefers-reduced-motion: reduce) {
+		.pixel-pet, .pixel-pet .wing, .pixel-pet .pet-sparkles, .pixel-pet .pet-flame { animation: none !important; }
+	}
+</style>
+
+<script>
+	import { loadPet, moodFor, MOOD_LINES, pet, visitPage } from '../lib/pet';
+
+	const KEY = 'pixel-pet';
+	const el = document.querySelector<HTMLButtonElement>('[data-pet]');
+	const bubble = document.querySelector<HTMLElement>('[data-pet-bubble]');
+
+	function save(state: unknown) {
+		try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {}
+	}
+	function read(): string | null {
+		try { return localStorage.getItem(KEY); } catch { return null; }
+	}
+
+	function render(state: ReturnType<typeof loadPet>, line?: string) {
+		if (!el || !bubble) return;
+		const mood = moodFor(state.happiness);
+		el.className = `pixel-pet mood-${mood}`;
+		bubble.textContent = line ?? MOOD_LINES[mood];
+	}
+
+	const today = new Date().toISOString().slice(0, 10);
+	let state = visitPage(loadPet(read()), location.pathname, today);
+	save(state);
+	render(state);
+
+	el?.addEventListener('click', () => {
+		const before = state.happiness;
+		state = pet(state, today);
+		save(state);
+		render(state, state.happiness === before ? 'touch me again and i torch the guestbook.' : undefined);
+		bubble?.classList.add('show');
+		setTimeout(() => bubble?.classList.remove('show'), 1500);
+	});
+</script>

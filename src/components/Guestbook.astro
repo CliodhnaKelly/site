@@ -1,0 +1,156 @@
+---
+const MOODS = ['💬', '💖', '🎧', '🌟', '🫨', '🍀'];
+---
+
+<section class="retro-box panel" aria-labelledby="guestbook-heading">
+	<div class="module-title" id="guestbook-heading">Guestbook</div>
+
+	<form class="gb-form" data-gb-form>
+		<div class="gb-row">
+			<input name="name" placeholder="your name" maxlength="30" aria-label="Your name" />
+			<select name="mood" aria-label="Mood emoji">
+				{MOODS.map((m) => <option value={m}>{m}</option>)}
+			</select>
+		</div>
+		<textarea name="message" rows="3" maxlength="280" placeholder="leave a message… (nudges the page)" aria-label="Your message"></textarea>
+		<div class="gb-row">
+			<button type="submit" class="gb-sign">Sign it ✍️</button>
+			<button type="button" class="gb-nudge" data-gb-nudge title="just the nudge, no autograph">send a nudge 🫨</button>
+		</div>
+		<p class="gb-error" data-gb-error role="alert"></p>
+	</form>
+
+	<div class="gb-entries" data-gb-entries></div>
+	<p class="gb-note">signatures are stored in <em>your</em> browser for now — a shared book is on the roadmap.</p>
+</section>
+
+<style>
+	.gb-form { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+	.gb-row { display: flex; gap: 8px; }
+	.gb-form input, .gb-form textarea, .gb-form select {
+		border: 1px solid var(--c-panel-bd);
+		border-radius: 6px;
+		background: var(--c-tab);
+		color: var(--c-text);
+		padding: 7px 9px;
+		font: inherit;
+	}
+	.gb-form input { flex: 1; }
+	.gb-form textarea { resize: vertical; }
+	.gb-sign, .gb-nudge {
+		border: 1px solid var(--c-border-dk);
+		border-radius: 6px;
+		padding: 7px 12px;
+		font-weight: 700;
+		cursor: pointer;
+	}
+	.gb-sign { background: var(--c-accent); color: #fff; }
+	.gb-nudge { background: var(--c-tab); color: var(--c-text); }
+	.gb-error { color: #c62828; font-size: 12px; min-height: 1em; margin: 0; }
+	.gb-entries { display: flex; flex-direction: column; gap: 8px; }
+	.gb-note { font-size: 11px; opacity: 0.7; margin: 10px 0 0; }
+
+	:global(.nudged) { animation: msn-nudge 0.5s linear; }
+	@keyframes msn-nudge {
+		10% { transform: translate(-6px, 3px); }
+		20% { transform: translate(7px, -4px); }
+		30% { transform: translate(-8px, -2px); }
+		40% { transform: translate(6px, 4px); }
+		50% { transform: translate(-5px, -5px); }
+		60% { transform: translate(7px, 2px); }
+		70% { transform: translate(-4px, 4px); }
+		80% { transform: translate(5px, -3px); }
+		90% { transform: translate(-3px, 1px); }
+	}
+	@media (prefers-reduced-motion: reduce) {
+		:global(.nudged) { animation: none; }
+	}
+</style>
+
+<script>
+	import { addEntry, loadEntries, validateEntry, type Entry } from '../lib/guestbook';
+
+	const KEY = 'guestbook';
+	const form = document.querySelector<HTMLFormElement>('[data-gb-form]');
+	const list = document.querySelector<HTMLElement>('[data-gb-entries]');
+	const errorEl = document.querySelector<HTMLElement>('[data-gb-error]');
+
+	let entries: Entry[] = (() => {
+		try { return loadEntries(localStorage.getItem(KEY)); } catch { return []; }
+	})();
+
+	function render() {
+		if (!list) return;
+		list.textContent = '';
+		if (!entries.length) {
+			const p = document.createElement('p');
+			p.textContent = 'no signatures yet — be the first!';
+			p.style.opacity = '0.7';
+			list.append(p);
+			return;
+		}
+		for (const e of entries) {
+			const card = document.createElement('article');
+			card.className = 'retro-box bookmark-entry';
+			const head = document.createElement('p');
+			head.className = 'bookmark-meta';
+			head.textContent = `${e.mood} ${e.name} · ${new Date(e.at).toLocaleDateString()}`;
+			const body = document.createElement('p');
+			body.className = 'bookmark-note';
+			body.textContent = e.message; // textContent everywhere: no HTML injection
+			card.append(head, body);
+			list.append(card);
+		}
+	}
+
+	function nudge() {
+		const shell = document.querySelector('.site-shell') ?? document.body;
+		shell.classList.remove('nudged');
+		void (shell as HTMLElement).offsetWidth; // restart the animation
+		shell.classList.add('nudged');
+		buzz();
+	}
+
+	// The MSN nudge sound, synthesised — a short two-tone rattle.
+	function buzz() {
+		try {
+			const ctx = new AudioContext();
+			const osc = ctx.createOscillator();
+			const lfo = ctx.createOscillator();
+			const lfoGain = ctx.createGain();
+			const gain = ctx.createGain();
+			osc.type = 'square';
+			osc.frequency.value = 170;
+			lfo.type = 'square';
+			lfo.frequency.value = 16;
+			lfoGain.gain.value = 60;
+			lfo.connect(lfoGain).connect(osc.frequency);
+			gain.gain.setValueAtTime(0.08, ctx.currentTime);
+			gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
+			osc.connect(gain).connect(ctx.destination);
+			osc.start(); lfo.start();
+			osc.stop(ctx.currentTime + 0.45); lfo.stop(ctx.currentTime + 0.45);
+			osc.onended = () => ctx.close();
+		} catch { /* no audio? the shake still lands */ }
+	}
+
+	form?.addEventListener('submit', (e) => {
+		e.preventDefault();
+		const data = new FormData(form);
+		const v = validateEntry(String(data.get('name') ?? ''), String(data.get('message') ?? ''));
+		if (!v.ok) { if (errorEl) errorEl.textContent = v.error; return; }
+		if (errorEl) errorEl.textContent = '';
+		entries = addEntry(entries, {
+			name: v.name, message: v.message,
+			at: new Date().toISOString(),
+			mood: String(data.get('mood') ?? '💬'),
+		});
+		try { localStorage.setItem(KEY, JSON.stringify(entries)); } catch {}
+		form.reset();
+		render();
+		nudge();
+	});
+
+	document.querySelector('[data-gb-nudge]')?.addEventListener('click', nudge);
+	render();
+</script>

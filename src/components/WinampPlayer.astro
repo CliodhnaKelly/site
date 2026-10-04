@@ -1,0 +1,210 @@
+---
+import { playlist } from '../data/playlist';
+---
+
+<section class="winamp retro-box" aria-label="Music player" data-player data-playlist={JSON.stringify(playlist)}>
+	<div class="wa-title heading-font">≡ clio-amp 2.95</div>
+
+	<div class="wa-screen">
+		<canvas class="wa-vis" width="76" height="36" data-vis aria-hidden="true"></canvas>
+		<div class="wa-readout">
+			<div class="wa-time" data-time>0:00</div>
+			<div class="wa-marquee"><span data-marquee>*** clio-amp ***</span></div>
+		</div>
+	</div>
+
+	<input class="wa-seek" type="range" min="0" max="100" value="0" step="0.1" data-seek aria-label="Seek" />
+
+	<div class="wa-controls">
+		<button data-prev title="Previous" aria-label="Previous track">⏮</button>
+		<button data-play title="Play/Pause" aria-label="Play or pause">▶</button>
+		<button data-next title="Next" aria-label="Next track">⏭</button>
+		<button data-repeat title="Repeat one" aria-label="Repeat one track" aria-pressed="false">🔁</button>
+		<input class="wa-volume" type="range" min="0" max="1" step="0.01" value="0.8" data-volume aria-label="Volume" />
+		<label class="wa-load" title="Play a file from your computer (stays on your machine)">
+			📂<input type="file" accept="audio/*" data-file hidden />
+		</label>
+	</div>
+
+	<ol class="wa-playlist" data-list></ol>
+</section>
+
+<style>
+	.winamp {
+		background: #1a1428;
+		color: #d7c9f5;
+		border-color: var(--c-border-dk);
+		padding: 0 0 10px;
+		max-width: 340px;
+	}
+	.wa-title {
+		background: linear-gradient(90deg, var(--c-accent-dk), var(--c-accent));
+		color: #fff;
+		font-size: 9px;
+		padding: 4px 8px;
+		letter-spacing: 1px;
+	}
+	.wa-screen {
+		display: flex;
+		gap: 8px;
+		margin: 8px 10px 4px;
+		background: #0b0716;
+		border: 1px solid #3a2f55;
+		padding: 6px;
+	}
+	.wa-vis { image-rendering: pixelated; width: 76px; height: 36px; background: #0b0716; }
+	.wa-readout { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: space-between; }
+	.wa-time { font: 700 18px/1 'Press Start 2P', monospace; font-size: 14px; color: var(--c-accent-lt); }
+	.wa-marquee { overflow: hidden; white-space: nowrap; font-size: 11px; color: #9ff0a0; }
+	.wa-marquee span { display: inline-block; padding-left: 100%; animation: wa-scroll 9s linear infinite; }
+	@keyframes wa-scroll { to { transform: translateX(-100%); } }
+	@media (prefers-reduced-motion: reduce) { .wa-marquee span { animation: none; padding-left: 0; } }
+
+	.wa-seek { width: calc(100% - 20px); margin: 4px 10px; accent-color: var(--c-accent); }
+	.wa-controls { display: flex; align-items: center; gap: 6px; margin: 2px 10px 8px; }
+	.wa-controls button {
+		background: #241c3a;
+		color: #d7c9f5;
+		border: 1px solid #3a2f55;
+		border-radius: 4px;
+		padding: 4px 8px;
+		cursor: pointer;
+		font-size: 13px;
+	}
+	.wa-controls button[aria-pressed='true'] { background: var(--c-accent-dk); color: #fff; }
+	.wa-volume { flex: 1; accent-color: var(--c-accent); min-width: 40px; }
+	.wa-load { cursor: pointer; font-size: 15px; }
+
+	.wa-playlist { margin: 0 10px; padding: 0 0 0 22px; font-size: 12px; max-height: 110px; overflow-y: auto; }
+	.wa-playlist li { cursor: pointer; padding: 1px 4px; }
+	.wa-playlist li.current { background: var(--c-accent-dk); color: #fff; }
+	.wa-playlist li:hover { text-decoration: underline; }
+	.wa-empty { opacity: 0.6; font-style: italic; list-style: none; margin-left: -22px; }
+</style>
+
+<script>
+	import { formatTime, marqueeText, nextIndex, prevIndex, type Track } from '../lib/player';
+
+	const root = document.querySelector<HTMLElement>('[data-player]');
+	if (root) {
+		const tracks: Track[] = JSON.parse(root.dataset.playlist ?? '[]');
+		const audio = new Audio();
+		const $ = <T extends HTMLElement>(sel: string) => root.querySelector<T>(sel)!;
+		const playBtn = $('[data-play]');
+		const repeatBtn = $('[data-repeat]');
+		const timeEl = $('[data-time]');
+		const marqueeEl = $('[data-marquee]');
+		const seekEl = $<HTMLInputElement>('[data-seek]');
+		const volEl = $<HTMLInputElement>('[data-volume]');
+		const listEl = $('[data-list]');
+		const canvas = $<HTMLCanvasElement>('[data-vis]');
+
+		let index = 0;
+		let repeatOne = false;
+		let analyser: AnalyserNode | null = null;
+
+		function renderList() {
+			listEl.textContent = '';
+			if (!tracks.length) {
+				const li = document.createElement('li');
+				li.className = 'wa-empty';
+				li.textContent = 'playlist empty — 📂 loads a local file';
+				listEl.append(li);
+				return;
+			}
+			tracks.forEach((t, i) => {
+				const li = document.createElement('li');
+				li.textContent = `${t.artist} – ${t.title}`;
+				li.classList.toggle('current', i === index);
+				li.addEventListener('click', () => load(i, true));
+				listEl.append(li);
+			});
+		}
+
+		function load(i: number, andPlay: boolean) {
+			if (!tracks.length) return;
+			index = i;
+			audio.src = tracks[i].src;
+			marqueeEl.textContent = marqueeText(tracks[i]);
+			renderList();
+			if (andPlay) void play();
+		}
+
+		async function play() {
+			if (!audio.src) return;
+			hookAnalyser();
+			await audio.play().catch(() => {});
+			playBtn.textContent = audio.paused ? '▶' : '⏸';
+		}
+
+		function hookAnalyser() {
+			if (analyser) return;
+			try {
+				const ctx = new AudioContext();
+				const src = ctx.createMediaElementSource(audio);
+				analyser = ctx.createAnalyser();
+				analyser.fftSize = 64;
+				src.connect(analyser).connect(ctx.destination);
+				drawVis();
+			} catch { /* CORS-restricted source: audio still plays, no bars */ }
+		}
+
+		function drawVis() {
+			const ctx2d = canvas.getContext('2d');
+			if (!ctx2d || !analyser) return;
+			const data = new Uint8Array(analyser.frequencyBinCount);
+			const bars = 19;
+			(function frame() {
+				requestAnimationFrame(frame);
+				analyser!.getByteFrequencyData(data);
+				ctx2d.clearRect(0, 0, canvas.width, canvas.height);
+				const accent = getComputedStyle(document.documentElement).getPropertyValue('--c-accent-lt') || '#ff8ccc';
+				ctx2d.fillStyle = accent;
+				for (let i = 0; i < bars; i++) {
+					const v = data[Math.floor((i / bars) * data.length)] / 255;
+					const h = Math.max(1, v * canvas.height);
+					ctx2d.fillRect(i * 4, canvas.height - h, 3, h);
+				}
+			})();
+		}
+
+		playBtn.addEventListener('click', () => {
+			if (audio.paused) { if (!audio.src && tracks.length) load(0, false); void play(); }
+			else { audio.pause(); playBtn.textContent = '▶'; }
+		});
+		$('[data-next]').addEventListener('click', () => {
+			const n = nextIndex(index, tracks.length, false);
+			if (n !== null) load(n, !audio.paused);
+		});
+		$('[data-prev]').addEventListener('click', () => {
+			const p = prevIndex(index, tracks.length);
+			if (p !== null) load(p, !audio.paused);
+		});
+		repeatBtn.addEventListener('click', () => {
+			repeatOne = !repeatOne;
+			repeatBtn.setAttribute('aria-pressed', String(repeatOne));
+		});
+		audio.addEventListener('ended', () => {
+			const n = nextIndex(index, tracks.length, repeatOne);
+			if (n !== null) load(n, true);
+		});
+		audio.addEventListener('timeupdate', () => {
+			timeEl.textContent = formatTime(audio.currentTime);
+			if (audio.duration) seekEl.value = String((audio.currentTime / audio.duration) * 100);
+		});
+		seekEl.addEventListener('input', () => {
+			if (audio.duration) audio.currentTime = (Number(seekEl.value) / 100) * audio.duration;
+		});
+		volEl.addEventListener('input', () => { audio.volume = Number(volEl.value); });
+
+		$<HTMLInputElement>('[data-file]').addEventListener('change', (e) => {
+			const file = (e.target as HTMLInputElement).files?.[0];
+			if (!file) return;
+			tracks.push({ title: file.name.replace(/\.[^.]+$/, ''), artist: 'local file', src: URL.createObjectURL(file) });
+			load(tracks.length - 1, true);
+		});
+
+		marqueeEl.textContent = marqueeText(tracks[0]);
+		renderList();
+	}
+</script>
