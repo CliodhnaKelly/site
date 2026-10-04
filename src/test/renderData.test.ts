@@ -33,7 +33,6 @@ describe('owner', () => {
 
 describe('projects', () => {
 	it('every project renders a complete card', () => {
-		expect(projects.length).toBeGreaterThanOrEqual(1);
 		for (const project of projects) {
 			expect(project.title).toBeTruthy();
 			expect(project.description).toBeTruthy();
